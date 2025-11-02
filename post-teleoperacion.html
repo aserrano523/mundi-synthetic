@@ -25,29 +25,31 @@
 
   <script>
     (async () => {
-      // Detección heurística de si estamos en subcarpeta (p. ej., /posts/post-x.html)
-      const isSubpage = location.pathname.split('/').length > 2;
-      // Rutas relativas del header y del script principal en función de la profundidad
-      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
-      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+      // Detecta si estás en GitHub Pages (proyecto) y fija la base
+      const repoBase = location.pathname.startsWith('/mundi-synthetic/')
+        ? '/mundi-synthetic/'
+        : '/';
+
+      // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html)
+      const headerPath = repoBase + 'partials/header.html';
+      const mainJsPath = repoBase + 'js/main.js';
 
       try {
-        // Carga del parcial de cabecera
         const response = await fetch(headerPath);
-        if (!response.ok) throw new Error(response.status);
+        if (!response.ok) throw new Error(response.status + ' ' + response.statusText);
         const html = await response.text();
-        // Inserta el HTML del header dentro del placeholder
+        // Inserta el header común (navegación, logo, toggle de dark mode, etc.)
         document.getElementById('header-placeholder').innerHTML = html;
 
-        // Carga main.js después de insertar el header
-        // Evita condiciones de carrera: los listeners (p. ej., botón de dark mode) encuentran sus nodos.
+        // Carga main.js solo después de insertar el header
+        // (garantiza que el botón de modo oscuro y otros listeners encuentren sus nodos)
         const script = document.createElement('script');
         script.src = mainJsPath;
         script.defer = true; // no bloquea el parseo del documento
         document.body.appendChild(script);
       } catch (err) {
-        // Degradación elegante: si falla el header, el contenido sigue accesible
-        console.error('Error cargando header:', err);
+        // Degradación elegante: el contenido sigue accesible aunque no se pinte el header
+        console.error('Error cargando header:', headerPath, err);
       }
     })();
   </script>

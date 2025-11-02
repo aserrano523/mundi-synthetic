@@ -23,15 +23,18 @@
   <div id="header-placeholder"></div>
   <script>
     (async () => {
+      // Detecta si estás en GitHub Pages (proyecto) y fija la base
+      const repoBase = location.pathname.startsWith('/mundi-synthetic/')
+        ? '/mundi-synthetic/'
+        : '/';
+
       // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html)
-      // Heurística: número de segmentos del path.
-      const isSubpage = location.pathname.split('/').length > 2;
-      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
-      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+      const headerPath = repoBase + 'partials/header.html';
+      const mainJsPath = repoBase + 'js/main.js';
 
       try {
         const response = await fetch(headerPath);
-        if (!response.ok) throw new Error(response.status);
+        if (!response.ok) throw new Error(response.status + ' ' + response.statusText);
         const html = await response.text();
         // Inserta el header común (navegación, logo, toggle de dark mode, etc.)
         document.getElementById('header-placeholder').innerHTML = html;
@@ -44,7 +47,7 @@
         document.body.appendChild(script);
       } catch (err) {
         // Degradación elegante: el contenido sigue accesible aunque no se pinte el header
-        console.error('Error cargando header:', err);
+        console.error('Error cargando header:', headerPath, err);
       }
     })();
   </script>

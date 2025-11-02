@@ -49,49 +49,31 @@
 
   <script>
     (async () => {
-      /*
-        Bloque IIFE asíncrono (Immediately Invoked Function Expression):
-        - Encapsula variables (no contamina el ámbito global).
-        - Permite usar await en la inicialización sin funciones extra.
+      // Detecta si estás en GitHub Pages (proyecto) y fija la base
+      const repoBase = location.pathname.startsWith('/mundi-synthetic/')
+        ? '/mundi-synthetic/'
+        : '/';
 
-        Objetivo general:
-        1) Detectar si esta página se sirve desde una subcarpeta (p.ej., /posts/...).
-        2) Construir rutas relativas correctas a /partials/header.html y /js/main.js.
-        3) Cargar el header vía fetch e inyectarlo en #header-placeholder.
-        4) Insertar dinámicamente <script src=".../main.js" defer> cuando el header ya
-           está disponible en el DOM (evita listeners sobre nodos inexistentes).
-      */
-
-      // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html).
-      // Heurística: más de dos segmentos en la ruta ("" y "index.html" cuentan según servidor).
-      const isSubpage = location.pathname.split('/').length > 2;
-
-      // Según el nivel, resuelve rutas relativas correctas a los recursos compartidos.
-      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
-      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+      // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html)
+      const headerPath = repoBase + 'partials/header.html';
+      const mainJsPath = repoBase + 'js/main.js';
 
       try {
-        // Petición del fragmento de cabecera. Se usa fetch nativo; no requiere librerías.
         const response = await fetch(headerPath);
-
-        // Manejo explícito de errores HTTP (ayuda en depuración y trazabilidad).
-        if (!response.ok) throw new Error(response.status);
-
-        // El contenido del partial se inyecta como HTML en el contenedor.
+        if (!response.ok) throw new Error(response.status + ' ' + response.statusText);
         const html = await response.text();
+        // Inserta el header común (navegación, logo, toggle de dark mode, etc.)
         document.getElementById('header-placeholder').innerHTML = html;
 
-        // Carga main.js solo después de insertar el header.
-        // De este modo, cualquier querySelector / addEventListener que apunte
-        // a elementos del header encontrará ya los nodos en el DOM.
+        // Carga main.js solo después de insertar el header
+        // (garantiza que el botón de modo oscuro y otros listeners encuentren sus nodos)
         const script = document.createElement('script');
         script.src = mainJsPath;
-        script.defer = true; // Se sugiere defer para no bloquear el hilo principal.
+        script.defer = true; // no bloquea el parseo del documento
         document.body.appendChild(script);
       } catch (err) {
-        // Fallback de errores (p.ej., 404 del partial o CORS si se abre con file://).
-        // La app degrada con gracia: aún hay contenido principal aunque falte la cabecera.
-        console.error('Error cargando header:', err);
+        // Degradación elegante: el contenido sigue accesible aunque no se pinte el header
+        console.error('Error cargando header:', headerPath, err);
       }
     })();
   </script>
