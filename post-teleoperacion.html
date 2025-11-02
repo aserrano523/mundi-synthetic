@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<!--
+  Documento: post-teleoperacion.html
+  Proyecto: Mundi Synthetic – Blog sobre VR y Robótica
+  Rol: Página de detalle (artículo).
+  Claves para la memoria:
+  - Header compartido inyectado vía fetch; se carga luego main.js para enganchar listeners (modo oscuro).
+  - Semántica: <main> + <article> con figuras y metadatos.
+-->
+<html lang="es">
+<head>
+  <!-- Metadatos base y viewport responsivo -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Título específico SEO de la página -->
+  <title>Teleoperación inmersiva con WebRTC, ROS 2 y VR | Mundi Synthetic</title>
+  <!-- CSS global del sitio (incluye variables de tema y dark mode) -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!--
+    Placeholder donde se inyecta el header común desde /partials/header.html.
+  -->
+  <div id="header-placeholder"></div>
+
+  <script>
+    (async () => {
+      // Detección heurística de si estamos en subcarpeta (p. ej., /posts/post-x.html)
+      const isSubpage = location.pathname.split('/').length > 2;
+      // Rutas relativas del header y del script principal en función de la profundidad
+      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
+      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+
+      try {
+        // Carga del parcial de cabecera
+        const response = await fetch(headerPath);
+        if (!response.ok) throw new Error(response.status);
+        const html = await response.text();
+        // Inserta el HTML del header dentro del placeholder
+        document.getElementById('header-placeholder').innerHTML = html;
+
+        // Carga main.js después de insertar el header
+        // Evita condiciones de carrera: los listeners (p. ej., botón de dark mode) encuentran sus nodos.
+        const script = document.createElement('script');
+        script.src = mainJsPath;
+        script.defer = true; // no bloquea el parseo del documento
+        document.body.appendChild(script);
+      } catch (err) {
+        // Degradación elegante: si falla el header, el contenido sigue accesible
+        console.error('Error cargando header:', err);
+      }
+    })();
+  </script>
+
+  <!--
+    Contenedor principal del artículo:
+    - .post-content define ancho máximo, centrado y estilos de “card”.
+    - <article> engloba el contenido editorial para semántica y accesibilidad.
+  -->
+  <main class="post-content">
+    <article>
+      <!-- Título del artículo (h2 para convivir con posible h1 global del sitio en el header) -->
+      <h2>Teleoperación inmersiva con WebRTC, ROS 2 y realidad virtual</h2>
+      <!-- Metadato de publicación con estilo atenuado (definido en CSS) -->
+      <p class="post-meta">Publicado el 1 de noviembre de 2025</p>
+
+      <!--
+        Figura de portada:
+        - class="cover-figure" → por CSS suele excluirse de numeración automática.
+        - aria-describedby="credit1" vincula la imagen con el crédito para lectores de pantalla.
+        - id="credit1" debe ser único en el documento (vigilar reutilización de IDs).
+      -->
+      <figure class="post-figure cover-figure">
+        <img src="img/portada-robot-teleoperation.jpeg" alt="Operador controlando un robot desde entorno VR mediante WebRTC" class="post-cover" aria-describedby="credit1">
+        <figcaption id="credit1" class="image-credit">Fuente: Autonomy and Teleoperation Department, Institute of Robotics and Mechatronics (DLR)</figcaption>
+      </figure>
+
+      <!-- Sección introductoria: define objetivo y componentes tecnológicos -->
+      <h3>Introducción: la teleoperación entra en el espacio inmersivo</h3>
+      <p>
+        La teleoperación robótica ha experimentado un cambio profundo con la incorporación de tecnologías inmersivas. La combinación de <strong>realidad virtual (VR)</strong>, <strong>ROS 2</strong> y <strong>WebRTC</strong> permite que un operador controle un robot físico desde un entorno virtual tridimensional, observando en tiempo real los efectos de sus acciones a través de flujos de vídeo y telemetría de baja latencia.
+      </p>
+      <p>
+        Este enfoque redefine la interacción humano-robot: el operador no solo supervisa el movimiento del robot, sino que “habita” el mismo espacio digital en el que el robot actúa, con percepción espacial, manipulación directa mediante gestos y una retroalimentación inmediata. La VR deja de ser una herramienta de visualización para convertirse en un <strong>canal activo de control remoto</strong>.
+      </p>
+
+      <!-- Arquitectura de alto nivel -->
+      <h3>Arquitectura general: Unity + WebRTC + ROS 2</h3>
+      <p>
+        La infraestructura típica se basa en un flujo de comunicación bidireccional. En el extremo del operador, un visor como <strong>Meta Quest 2</strong> ejecuta una aplicación desarrollada en <strong>Unity</strong> con soporte <strong>OpenXR</strong> y <strong>XR Interaction Toolkit</strong>. Este entorno representa al robot en escala real y capta los movimientos de las manos o controladores del usuario.
+      </p>
+      <p>
+        Los datos de posición y rotación se envían mediante <strong>WebRTC DataChannels</strong> hacia un nodo remoto que ejecuta <strong>ROS 2</strong>. Allí, la información se traduce en comandos de movimiento o trayectorias planificadas con <em>MoveIt 2</em>. En sentido inverso, el robot transmite al entorno VR flujos de vídeo y sensores a través de los canales multimedia de WebRTC, de modo que el operador ve en tiempo real lo que “ve” el robot físico.
+      </p>
+
+      <!--
+        Figura interior (diagrama):
+        - aria-describedby="fig1" <-> id="fig1" asegura relación accesible imagen→título.
+      -->
+      <figure class="post-figure">
+        <img src="img/diagrama-arquitectura-webrtc-vr.png" alt="Arquitectura de teleoperación VR con WebRTC y ROS 2" class="post-image" aria-describedby="fig1">
+        <figcaption id="fig1" class="image-title">Arquitectura de teleoperación VR con WebRTC y ROS 2</figcaption>
+      </figure>
+
+      <!-- Papel de WebRTC -->
+      <h3>El papel de WebRTC en la experiencia inmersiva</h3>
+      <p>
+        WebRTC (Web Real-Time Communication) es el componente clave que hace viable esta experiencia. A diferencia de los protocolos tradicionales de streaming, su diseño <strong>peer-to-peer</strong> y sus mecanismos de compresión dinámica permiten mantener la latencia por debajo de los 150 milisegundos incluso en redes inestables. 
+      </p>
+      <p>
+        Además, WebRTC integra nativamente <strong>cifrado extremo a extremo</strong> (DTLS/SRTP), soporte para <strong>múltiples flujos simultáneos</strong> y canales de datos bidireccionales, todo lo cual lo convierte en la solución ideal para unir el ecosistema de la web, los visores VR y la infraestructura robótica de ROS 2.
+      </p>
+      <p>
+        En un contexto de teleoperación inmersiva, WebRTC cumple dos funciones críticas: transmitir la percepción sensorial del robot al entorno VR (vídeo, profundidad, sensores) y enviar de vuelta las acciones del operador (movimientos, gestos o comandos de voz). La sincronización precisa entre ambas direcciones determina la sensación de presencia y control.
+      </p>
+
+      <!-- Integración con ROS 2 / MoveIt 2 -->
+      <h3>Integración con ROS 2 y MoveIt 2</h3>
+      <p>
+        ROS 2 actúa como la capa de control que coordina los mensajes de movimiento, la planificación de trayectorias y la gestión de sensores. Cuando el operador mueve sus manos en VR, el sistema genera mensajes con las transformaciones espaciales (<code>geometry_msgs/Pose</code>) y los publica en tópicos ROS 2. Estos comandos pueden traducirse en acciones de manipulación mediante <strong>MoveIt 2</strong>, que garantiza trayectorias libres de colisiones y límites de seguridad.
+      </p>
+      <p>
+        El flujo de trabajo puede resumirse en tres pasos:
+      </p>
+      <ul>
+        <li>El operador interactúa en VR; los datos de posición y gesto se envían a través de WebRTC.</li>
+        <li>ROS 2 procesa esos datos y calcula el movimiento más adecuado del robot.</li>
+        <li>El robot ejecuta la acción, y la cámara devuelve la retroalimentación visual en tiempo real al visor.</li>
+      </ul>
+      <p>
+        La sincronización de estos pasos es esencial para lograr una sensación fluida de control. Incluso pequeñas desincronizaciones (por encima de 200 ms) pueden romper la ilusión de presencia y dificultar tareas precisas de manipulación.
+      </p>
+
+      <!--
+        Figura con múltiples figcaption anidados
+      -->
+      <figure class="post-figure">
+        <img src="img/baxter-teleoperation.jpg" alt="Operador en VR controlando robot Baxter de doble brazo en tiempo real" class="post-image" aria-describedby="fig2">
+        <figcaption>
+          <figcaption id="fig2" class="image-meta"><span class="image-title">Operador en VR controlando robot Baxter de doble brazo en tiempo real</span><span class="image-credit">Fuente: <a href="https://blog.robotiq.com/teleoperated-robots-the-industrial-future-using-a" target="_blank" rel="noopener">Robotiq</a></span></figcaption>
+      </figure>
+
+      <!-- Diseño UI/UX inmersivo -->
+      <h3>Diseño de la interfaz inmersiva</h3>
+      <p>
+        La interfaz en realidad virtual debe equilibrar simplicidad visual y feedback informativo. En un sistema de teleoperación, el operador necesita disponer de referencias claras de profundidad, límites articulares y estados del robot. Una interfaz bien diseñada incluye indicadores flotantes sobre cada articulación, volúmenes de colisión y trayectorias proyectadas en color para anticipar movimientos.
+      </p>
+      <p>
+        El uso de <strong>HUDs adaptativos</strong> permite mostrar información contextual sin saturar la vista: cuando el robot se aproxima a un límite físico, se activan alertas visuales o hápticas; al completar una acción, la interfaz muestra confirmaciones temporales. Este tipo de retroalimentación ayuda a mantener la atención del operador y evita sobrecarga cognitiva durante tareas prolongadas.
+      </p>
+
+      <!-- Latencia y percepción -->
+      <h3>Latencia, sincronización y percepción del control</h3>
+      <p>
+        En la teleoperación inmersiva, la latencia percibida es el principal factor que determina la sensación de “presencia”. Los sistemas más estables logran tiempos de ida y vuelta inferiores a 100 ms, combinando técnicas de interpolación en Unity con compresión dinámica en WebRTC. 
+      </p>
+      <p>
+        En pruebas controladas, se ha demostrado que por debajo de 120 ms el operador mantiene una percepción natural de respuesta, mientras que por encima de ese umbral aparecen retardos perceptibles que afectan la precisión. Para compensarlo, algunos entornos VR aplican <strong>predicción de movimiento</strong> basada en IA, ajustando la posición estimada del robot en función de la velocidad del gesto humano.
+      </p>
+
+      <!-- Casos de uso -->
+      <h3>Casos de uso y aplicaciones</h3>
+      <p>
+        La teleoperación VR con WebRTC y ROS 2 abre la puerta a un amplio abanico de aplicaciones. En entornos industriales, puede emplearse para manipular objetos peligrosos o realizar mantenimiento remoto en plantas automatizadas. En educación, permite a los estudiantes practicar con robots reales desde simulaciones virtuales, compartiendo la sesión a través del navegador sin instalación adicional. 
+      </p>
+      <p>
+        También se exploran aplicaciones en el ámbito médico y de rescate, donde un operador podría dirigir un robot explorador en entornos inaccesibles, con percepción inmersiva y control gestual. El acceso multiplataforma de WebRTC hace posible estas operaciones desde visores VR, ordenadores o incluso dispositivos móviles.
+      </p>
+
+      <!-- Seguridad -->
+      <h3>Seguridad y control compartido</h3>
+      <p>
+        La conexión entre mundos virtuales y robots físicos introduce riesgos inherentes que deben mitigarse. ROS 2 y WebRTC ofrecen mecanismos nativos de seguridad, como <strong>cifrado DTLS/SRTP</strong> y autenticación por usuario, pero es recomendable implementar una capa adicional de control compartido. 
+      </p>
+      <p>
+        En sistemas avanzados, las órdenes del operador se validan por un nodo supervisor que verifica los límites articulares, la zona de trabajo y la integridad del entorno físico. Este modelo de “autorización doble” garantiza que ninguna acción en VR pueda provocar colisiones o daños en el robot real.
+      </p>
+
+      <!-- Conclusión -->
+      <h3>Conclusión</h3>
+      <p>
+        La integración de <strong>VR, ROS 2 y WebRTC</strong> representa el siguiente paso en la evolución de la teleoperación robótica. Combina inmersión, precisión y conectividad global en una misma plataforma accesible desde la web. Al situar al operador dentro del entorno del robot, no solo se amplifica la comprensión espacial, sino también la capacidad de control intuitivo y seguro.
+      </p>
+      <p>
+        En un futuro próximo, la incorporación de algoritmos predictivos y entornos colaborativos multiusuario convertirá la teleoperación inmersiva en una herramienta cotidiana para la investigación, la formación y la industria. El robot y su gemelo digital ya no estarán separados por pantallas: coexistirán en un mismo espacio interactivo, conectado en tiempo real a través de la red.
+      </p>
+    </article>
+  </main>
+
+  <!-- Pie con atribución y contexto docente -->
+  <footer>
+    <p>
+      © 2025 Mundi Synthetic. Blog sobre Realidad virtual y simulación con robots.<br>
+      Proyecto educativo – HTML, CSS y JS – en la asignatura <br>
+      Desarrollo de Aplicaciones en Red del Grado de Ingeniería Informática.
+    </p>
+  </footer>
+ </body>
+</html>

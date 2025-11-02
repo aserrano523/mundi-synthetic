@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+  Documento: index.html
+  Proyecto: Mundi Synthetic – Blog sobre VR y Robótica
+  Propósito: Página de inicio que lista las entradas del blog.
+  Notas de arquitectura:
+  - La cabecera (header) se carga dinámicamente desde /partials/header.html
+    para reutilizarla en todas las páginas y evitar duplicación.
+  - El script principal (js/main.js) se inyecta tras montar el header para
+    garantizar que los listeners referencian nodos ya presentes en el DOM.
+  - Se detecta si la página está en subcarpeta para ajustar rutas relativas.
+-->
+
+<html lang="es">
+<head>
+  <!--
+    Correcta declaración de codificación y viewport para
+    compatibilidad con móviles (responsive).
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--
+    Título orientado a SEO: incluye marca del blog + temática principal.
+  -->
+  <title>Mundi Synthetic – Blog sobre VR y Robótica</title>
+
+  <!--
+    Favicon propio del proyecto (branding consistente).
+  -->
+  <link rel="icon" href="img/logo-mundi-synthetic.png" type="image/png">
+
+  <!--
+    Hoja de estilos global del sitio. Mantiene la separación vista en clase:
+    HTML (estructura), CSS (presentación) y JS (comportamiento).
+  -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <!--
+    Marcador donde se inyectará la cabecera común (navegación, logo, etc.)
+    tras la carga asíncrona. Este enfoque:
+      - Evita duplicar el header en cada HTML.
+      - Facilita cambios globales (un único archivo partials/header.html).
+      - Reduce errores de coherencia en navegación.
+  -->
+  <div id="header-placeholder"></div>
+
+  <script>
+    (async () => {
+      /*
+        Bloque IIFE asíncrono (Immediately Invoked Function Expression):
+        - Encapsula variables (no contamina el ámbito global).
+        - Permite usar await en la inicialización sin funciones extra.
+
+        Objetivo general:
+        1) Detectar si esta página se sirve desde una subcarpeta (p.ej., /posts/...).
+        2) Construir rutas relativas correctas a /partials/header.html y /js/main.js.
+        3) Cargar el header vía fetch e inyectarlo en #header-placeholder.
+        4) Insertar dinámicamente <script src=".../main.js" defer> cuando el header ya
+           está disponible en el DOM (evita listeners sobre nodos inexistentes).
+      */
+
+      // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html).
+      // Heurística: más de dos segmentos en la ruta ("" y "index.html" cuentan según servidor).
+      const isSubpage = location.pathname.split('/').length > 2;
+
+      // Según el nivel, resuelve rutas relativas correctas a los recursos compartidos.
+      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
+      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+
+      try {
+        // Petición del fragmento de cabecera. Se usa fetch nativo; no requiere librerías.
+        const response = await fetch(headerPath);
+
+        // Manejo explícito de errores HTTP (ayuda en depuración y trazabilidad).
+        if (!response.ok) throw new Error(response.status);
+
+        // El contenido del partial se inyecta como HTML en el contenedor.
+        const html = await response.text();
+        document.getElementById('header-placeholder').innerHTML = html;
+
+        // Carga main.js solo después de insertar el header.
+        // De este modo, cualquier querySelector / addEventListener que apunte
+        // a elementos del header encontrará ya los nodos en el DOM.
+        const script = document.createElement('script');
+        script.src = mainJsPath;
+        script.defer = true; // Se sugiere defer para no bloquear el hilo principal.
+        document.body.appendChild(script);
+      } catch (err) {
+        // Fallback de errores (p.ej., 404 del partial o CORS si se abre con file://).
+        // La app degrada con gracia: aún hay contenido principal aunque falte la cabecera.
+        console.error('Error cargando header:', err);
+      }
+    })();
+  </script>
+
+  <!--
+    Contenido principal del índice del blog.
+    Patrón semántico:
+      - <main> como región principal.
+      - Cada entrada se modela como <article>, con imagen, título y resumen.
+      - Los títulos enlazan a las páginas de detalle (posts).
+    Accesibilidad:
+      - Se incluyen atributos alt en las imágenes (descripción básica del contenido).
+        Importante también para el SEO.
+      - Encabezados jerárquicos (<h2>) para navegabilidad por lectores de pantalla.
+  -->
+  <main class="blog-container">
+    <article class="post">
+      <!--
+        Imagen representativa de la entrada. El alt describe la función visual;
+        evita textos “imagen de…” redundantes si el contexto es obvio.
+      -->
+      <img src="img/portada-vr-robotica.png" alt="Imagen del post 1">
+      <!--
+        Título de la entrada. El <a> enlaza al detalle.
+        Buenas prácticas SEO: el texto del enlace es descriptivo, no “leer más”.
+      -->
+      <h2><a href="post-vr-robotica.html">Realidad virtual y robótica: control y colaboración</a></h2>
+      <!--
+        Resumen (teaser) de la entrada. Favorece el escaneo rápido por parte del usuario.
+      -->
+      <p>Arquitectura y prácticas para integrar Unity (OpenXR), Meta Quest 2 y ROS 2, con enfoque en diseño de interfaz inmersiva y reducción de latencia para control en tiempo real.</p>
+    </article>
+
+    <!-- Artículo 2 -->
+    <article class="post">
+      <img src="img/portada-gemelos-digitales.jpg" alt="Imagen del post 2">
+      <h2><a href="post-gemelos-digitales.html">Gemelos digitales: el paso previo al mundo real</a></h2>
+      <p>Uso de gemelos digitales en Gazebo y Unity para validar interacciones humano-robot, probar algoritmos y escenarios antes del despliegue físico con ROS 2.</p>
+    </article>
+
+    <!-- Artículo 3 -->
+    <article class="post">
+      <img src="img/portada-robot-teleoperation.jpeg" alt="Imagen del post 3">
+      <h2><a href="post-teleoperacion.html">Teleoperación inmersiva con WebRTC, ROS 2 y realidad virtual</a></h2>
+      <p>Descripción de la teleoperación inmersiva: WebRTC para vídeo y DataChannels, integración con ROS 2 y MoveIt 2, requisitos de latencia, sincronización, seguridad y casos de uso.</p>
+    </article>
+  </main>
+
+  <!--
+    Pie de página con atribución y contexto docente.
+    Incluye marca temporal (© 2025) y referencia a la asignatura / tecnologías usadas.
+  -->
+  <footer>
+    <p>
+      © 2025 Mundi Synthetic. Blog sobre Realidad virtual y simulación con robots.<br>
+      Proyecto educativo – HTML, CSS y JS – en la asignatura <br>
+      Desarrollo de Aplicaciones en Red del Grado de Ingeniería Informática.
+    </p>
+  </footer>
+</body>
+</html>

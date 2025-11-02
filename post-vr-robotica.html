@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<!--
+  Documento: post-vr-robotica.html
+  Proyecto: Mundi Synthetic – Blog sobre VR y Robótica
+  Rol: Página de detalle de artículo.
+  Claves:
+  - Header reutilizable cargado dinámicamente con fetch (ver <script>).
+  - Carga diferida de js/main.js tras montar el header (evita race conditions).
+  - Semántica: <main> + <article>, figuras con título/crédito y ARIA.
+  - No se modifica el contenido textual del artículo: solo anotaciones.
+-->
+<html lang="es">
+<head>
+  <!-- Metadatos base y viewport responsive -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Título SEO: tema del post + marca -->
+  <title>Realidad virtual y robótica | Mundi Synthetic</title>
+
+  <!-- CSS global (tema claro/oscuro con variables y clases) -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Placeholder donde se inyecta la cabecera común (partial /partials/header.html) -->
+  <div id="header-placeholder"></div>
+
+  <script>
+    (async () => {
+      // Detecta si estamos en subcarpeta (por ejemplo: /posts/post-x.html)
+      // Nota: heurística simple basada en el número de segmentos del path.
+      const isSubpage = location.pathname.split('/').length > 2;
+
+      // Resuelve rutas del partial y del JS según ubicación (raíz/subcarpeta)
+      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
+      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+
+      try {
+        const response = await fetch(headerPath);
+        if (!response.ok) throw new Error(response.status);
+        const html = await response.text();
+
+        // Inserta el header en el placeholder
+        document.getElementById('header-placeholder').innerHTML = html;
+
+        // ✅ Carga main.js solo después de insertar el header
+        // (garantiza que el botón de modo oscuro y otros nodos existan)
+        const script = document.createElement('script');
+        script.src = mainJsPath;
+        script.defer = true; // no bloquea el parseo del documento
+        document.body.appendChild(script);
+      } catch (err) {
+        // Degradación elegante: la página sigue siendo usable sin header
+        console.error('Error cargando header:', err);
+      }
+    })();
+  </script>
+
+  <!--
+    Contenido principal:
+    - .post-content limita el ancho y aplica estilo de tarjeta (ver CSS).
+    - Dentro, <article> agrupa el contenido editorial del post.
+  -->
+  <main class="post-content">
+    <article>
+      <!-- Título del post (nivel 2 para convivir con el <h1> del sitio en el header) -->
+      <h2>Realidad virtual y robótica: guía práctica para controlar y entrenar robots en entornos inmersivos</h2>
+
+      <!-- Metadato (fecha) con estilo atenuado en CSS -->
+      <p class="post-meta">Publicado el 31 de octubre de 2025</p>
+
+      <!--
+        Figura de portada:
+        - class="cover-figure": excluida de la numeración automática (ver CSS).
+        - aria-describedby asocia la imagen con el crédito (figcaption#credit1).
+      -->
+      <figure class="post-figure cover-figure">
+        <img src="img/portada-vr-robotica.png" alt="Operador controlando robot en VR" class="post-cover" aria-describedby="credit1">
+        <figcaption id="credit1" class="image-credit">Fuente: Nvidia</figcaption>
+      </figure>
+
+      <!-- Sección de contexto y motivación -->
+      <h3>¿Por qué combinar VR y robótica hoy?</h3>
+      <p>
+        La convergencia entre la realidad virtual (VR) y la robótica está transformando la forma en que se diseñan, entrenan y operan los sistemas automatizados. La realidad virtual ofrece percepción espacial, contexto y escala; la robótica, por su parte, aporta precisión, fuerza y repetibilidad. Su combinación reduce tiempos de aprendizaje, disminuye errores de manipulación y facilita la interacción hombre-máquina en entornos complejos.
+      </p>
+      <p>
+        En entornos de formación y experimentación, la sustitución de interfaces bidimensionales por entornos inmersivos ha demostrado mejorar la comprensión espacial y la anticipación de trayectorias. Los usuarios reconocen con mayor facilidad distancias, orientaciones y volúmenes de trabajo, lo que se traduce en una transferencia más directa de la simulación al robot físico cuando los modelos URDF están correctamente calibrados.
+      </p>
+      <p>
+        Aun así, persisten varios desafíos técnicos. En primer lugar, la <strong>latencia y el jitter</strong> afectan la sensación de control; para mantener una experiencia fluida, el retardo perceptible debe situarse por debajo de los 100 milisegundos. En segundo lugar, el <strong>seguimiento de manos</strong> sigue siendo variable en precisión, por lo que conviene complementarlo con “soft snaps” y ayudas visuales. Finalmente, la <strong>seguridad</strong> requiere sincronización constante entre el entorno físico y el virtual, definiendo límites, zonas de exclusión y frenado progresivo.
+      </p>
+
+      <!--
+        Figura interior numerable (ver CSS .post-content counter)
+      -->
+      <figure class="post-figure">
+        <img src="img/diagrama-arquitectura-vr-robotica.png" alt="Arquitectura VR-ROS con visor y robot colaborativo" class="post-image" aria-describedby="fig1">
+        <figcaption id="fig1" class="image-title">Arquitectura VR-ROS: visor y robot colaborativo</figcaption>
+      </figure>
+
+      <!-- Sección técnica: stack base -->
+      <h3>Arquitectura base: Unity/OpenXR + ROS 2 (MoveIt) + Gazebo/URDF</h3>
+      <p>
+        Un flujo de trabajo estable para este tipo de integración combina el visor Meta Quest 2 con el motor Unity (mediante XR Interaction Toolkit y OpenXR), enlazado a ROS 2 a través de WebSockets y el middleware <em>rosbridge</em>. Unity se encarga de la emisión de poses e interacciones, mientras que ROS 2 gestiona la cinemática, los estados del sistema y la planificación de trayectorias.
+      </p>
+      <p>
+        En el control de brazos robóticos, tanto reales como simulados, el uso de <strong>MoveIt 2</strong> permite calcular trayectorias seguras y activar límites suaves con frenado predictivo. Este enfoque evita invasiones de espacio y movimientos bruscos, mejorando la estabilidad general del sistema. En la práctica, un límite dinámico correctamente configurado resulta más eficaz que múltiples alertas visuales o sonoras.
+      </p>
+      <p>
+        La importación de modelos mediante <strong>URDF Importer</strong> en Unity posibilita la sincronización directa de articulaciones con ROS 2. Robots como Tiago++ o Fetch pueden controlarse articulación por articulación, con detección de colisiones y validación previa en <strong>Gazebo Fortress</strong> antes de trasladar los experimentos al hardware real. La consistencia en la nomenclatura de marcos y tópicos —por ejemplo, <code>base_link</code> frente a <code>base</code> o <code>joints</code> frente a <code>articulations</code>— es esencial para evitar errores de comunicación difíciles de rastrear.
+      </p>
+
+      <!-- UX del operador: latencia, confort, seguridad -->
+      <h3>Diseño de la experiencia del operador: latencia, confort y seguridad</h3>
+      <p>
+        En tareas de teleoperación, mantener la latencia perceptible por debajo de 100 ms es fundamental para garantizar una respuesta natural. Esto se logra incrementando la frecuencia de muestreo de las poses, aplicando interpolación en el cliente VR para suavizar microcortes y utilizando compresión ligera de mensajes cuando la red presenta variaciones de ancho de banda.
+      </p>
+      <p>
+        Una interacción eficiente combina <strong>seguimiento de manos</strong> para las acciones de precisión con <strong>comandos de voz</strong> para las órdenes macro, como “tomar caja” o “ir a estantería B”. Esta distribución funcional, acompañada de confirmaciones visuales en el HUD, optimiza la experiencia del operador y reduce el cansancio cognitivo. 
+      </p>
+      <p>
+        Además de los límites suaves, es recomendable definir <strong>zonas de exclusión</strong> y <strong>rampas de velocidad</strong> que reduzcan la aceleración del robot a medida que se aproxima a regiones críticas. Esta estrategia aumenta la percepción de seguridad y estabilidad incluso cuando la velocidad general del sistema se ve limitada.
+      </p>
+
+      <!--
+        Segunda figura interior
+      -->
+      <figure class="post-figure">
+        <img src="img/tiago_dual.png" alt="Simulación en almacén con Tiago++ colaborando con operador VR" class="post-image" aria-describedby="fig2">
+        <figcaption id="fig2" class="image-title">Simulación en almacén con Tiago++ colaborando con operador VR</figcaption>
+      </figure>
+      
+      <!-- Comunicaciones y streaming -->
+      <h3>Teleoperación y streaming: de WebSockets a WebRTC</h3>
+      <p>
+        La teleoperación de robots a través de redes locales o remotas exige un sistema de comunicación robusto y de baja latencia. El estándar <strong>WebRTC</strong> se ha consolidado como una solución eficaz, al permitir la transmisión simultánea de vídeo y telemetría directamente en el navegador, sin necesidad de instalar complementos adicionales. Gracias a este enfoque, es posible acceder al entorno simulado y visualizar la escena en primera persona desde cualquier dispositivo conectado.
+      </p>
+      <p>
+        En entornos con variabilidad de red, resulta prioritario asignar ancho de banda a los canales de <strong>telemetría crítica</strong> —como el estado del robot, fuerzas o límites de articulación— frente al vídeo de alta calidad. La optimización de la tasa de refresco y la compresión selectiva contribuyen a mantener la latencia en niveles imperceptibles para el operador, incluso cuando la resolución de imagen se reduce de manera adaptativa.
+      </p>
+      <p>
+        El uso de <strong>roles diferenciados</strong> dentro del sistema, como “observador” y “operador”, facilita la colaboración multiusuario y evita conflictos de control. Esta división permite que varios participantes compartan la sesión de trabajo en tiempo real: mientras uno ejecuta acciones directas sobre el robot, otros pueden supervisar el proceso o realizar anotaciones de apoyo desde ubicaciones remotas.
+      </p>
+
+      <!-- Colaboración H-R -->
+      <h3>Colaboración humano-robot en VR: casos en almacén y formación</h3>
+      <p>
+        La realidad virtual ofrece un marco ideal para analizar la interacción entre personas y robots en contextos industriales o educativos. En un escenario de almacén virtual, el operador puede desplazarse libremente por el entorno, planificar rutas y asistir al robot en tareas de manipulación colaborativa. Una de las funciones más efectivas consiste en permitir que el usuario <strong>preposicione</strong> objetos o piezas dentro del entorno VR, dejando que el robot complete de forma automática la fase final de recogida y colocación (<em>pick-and-place</em>).
+      </p>
+      <p>
+        Las mediciones realizadas en entornos de simulación indican que la retroalimentación visual en escala 1:1 y la representación volumétrica del espacio de trabajo del robot contribuyen a reducir errores y mejorar la intuición del operador sobre el alcance y las limitaciones articulares. La percepción directa del espacio de movimiento —en lugar de depender de vistas externas— facilita una comprensión más natural de la cinemática.
+      </p>
+      <p>
+        En los procesos de aprendizaje, la combinación de <strong>hand tracking</strong> y <strong>comandos de voz</strong> mejora la eficacia operativa. Los gestos permiten un ajuste fino de posiciones y trayectorias, mientras que las órdenes verbales ejecutan secuencias de mayor complejidad (“cargar contenedor”, “ir a estante C”, etc.). Cuando estas acciones se vinculan a macros programadas en ROS 2 y se acompañan de confirmaciones visuales, el flujo de trabajo resulta más estable y predecible.
+      </p>
+
+      <!-- Gemelos digitales -->
+      <h3>Gemelos digitales y pruebas antes del mundo real</h3>
+      <p>
+        La implementación de <strong>gemelos digitales</strong> constituye un paso clave en la validación de sistemas robóticos. Estos modelos virtuales reproducen no solo la geometría y las articulaciones del robot, sino también su comportamiento dinámico y la respuesta de los sensores. Al integrar la simulación física en <strong>Gazebo</strong> con la representación visual e interactiva en <strong>Unity</strong>, es posible ensayar operaciones completas antes de trasladarlas al entorno físico.
+      </p>
+      <p>
+        Este enfoque progresivo reduce riesgos y costes de desarrollo. Primero se verifican los parámetros cinemáticos y las colisiones en Gazebo; posteriormente se evalúan la usabilidad y la experiencia del operador en el entorno VR. Solo cuando ambas fases muestran estabilidad y coherencia, el sistema se transfiere al hardware real. La metodología minimiza errores durante las pruebas físicas y acelera la iteración entre diseño y ejecución.
+      </p>
+
+        <!-- Stack recomendado y costes -->
+        <h3>Stack recomendado y costes: del visor a la nube</h3>
+      <p>
+        El desarrollo de entornos inmersivos conectados con sistemas robóticos requiere una combinación equilibrada de hardware y software. Los visores <strong>Meta Quest 2 o Quest 3</strong> ofrecen un rendimiento óptimo para la mayoría de las simulaciones académicas o de laboratorio, siendo el primero una opción económica sin renunciar a la calidad visual. En el ámbito del motor gráfico, <strong>Unity 6</strong> junto con el paquete <em>XR Interaction Toolkit</em> y <strong>OpenXR</strong> proporciona un marco estable y flexible para implementar interacciones naturales y compatibilidad multiplataforma.
+      </p>
+
+      <!--
+        Figura con título y crédito
+      -->
+      <figure class="post-figure">
+        <img src="img/industrial-digital-twin-in-unity.avif" alt="Ejemplo de gemelo digital de un sistema de cinta transportadora industrial construido en Unity" class="post-image" aria-describedby="fig3">
+        <figcaption id="fig3" class="image-title">Ejemplo de gemelo digital industrial construido en Unity</figcaption>
+        <figcaption id="credit2" class="image-credit">Fuente: Unity</figcaption>
+      </figure>
+
+      <!-- Middleware, comunicación y reutilización -->
+      <p>
+        En el terreno del middleware, <strong>ROS 2 Humble</strong>, junto con <strong>MoveIt 2</strong> y <strong>Gazebo Fortress</strong>, constituye una base robusta para la planificación y simulación de movimientos. El desarrollo de la capa VR se implementa generalmente en <strong>C#</strong>, mientras que la lógica de control, análisis de datos y automatización de procesos suele realizarse en <strong>Python</strong>. En cuanto a la comunicación, los <strong>WebSockets</strong> ofrecen un canal simple y eficiente para entornos locales, mientras que <strong>WebRTC</strong> es la mejor opción cuando se requiere teleoperación remota con baja latencia.
+      </p>
+      <p>
+        La reutilización de modelos <strong>URDF</strong> y librerías de código abierto reduce notablemente los costes de desarrollo y mantenimiento. Este enfoque no solo acelera el proceso de iteración entre diseño y prueba, sino que también fomenta la interoperabilidad entre distintos sistemas de simulación y hardware físico.
+      </p>
+
+      <!-- Errores habituales -->
+      <h3>Errores comunes y cómo evitarlos</h3>
+      <p>
+        La integración entre VR y robótica plantea una serie de dificultades recurrentes que pueden afectar la estabilidad y la experiencia del usuario. Un <strong>seguimiento de manos excesivamente libre</strong> suele producir capturas erráticas; este problema se mitiga mediante la introducción de puntos de ajuste (“snaps”) y umbrales mínimos para el reconocimiento de gestos. El <strong>desfase entre el modelo físico y el virtual</strong> es otro de los errores más habituales y requiere una calibración precisa de escalas y pivotes.
+      </p>
+      <p>
+        Las denominadas “<strong>explosiones cinemáticas</strong>”, donde las articulaciones del robot pierden estabilidad por cálculos inconsistentes o fuerzas acumuladas, se previenen aplicando rampas de aceleración y algoritmos de frenado predictivo. Una <strong>red inestable</strong> debe compensarse priorizando la transmisión de telemetría esencial frente al vídeo en alta resolución, ya que la pérdida de control resulta más perjudicial que la degradación temporal de imagen. Finalmente, un <strong>HUD sobrecargado</strong> puede distraer al operador; se recomienda mostrar únicamente la información crítica (límites, errores, estado general) y activar el resto de indicadores de forma contextual.
+      </p>
+
+      <!-- Conclusión -->
+      <h3>Conclusión</h3>
+      <p>
+        La integración entre realidad virtual y robótica representa un avance decisivo en el ámbito de la formación técnica, la investigación aplicada y la automatización industrial. Más allá del impacto visual, su principal valor reside en la capacidad para <strong>acortar la curva de aprendizaje, reducir los errores operativos y democratizar el acceso a la teleoperación avanzada</strong>. 
+      </p>
+      <p>
+        Alcanzar una latencia perceptible inferior a los 100 milisegundos, implementar límites suaves con frenado predictivo y habilitar canales <strong>WebRTC</strong> para la supervisión remota son tres de los pilares que convierten las simulaciones en herramientas reales de apoyo a la ingeniería y la docencia. De este modo, la realidad virtual deja de ser un mero complemento visual para convertirse en un espacio de experimentación funcional y seguro.
+      </p>
+
+      <!-- FAQs: formato colapsable con <details> -->
+      <h3>Preguntas frecuentes</h3>
+
+      <details>
+        <summary><strong>¿Qué latencia es aceptable para la teleoperación de brazos robóticos en VR?</strong></summary>
+        <p>El objetivo es mantener la latencia perceptible por debajo de los 100 milisegundos. Para ello se recomienda optimizar la frecuencia de muestreo, aplicar interpolación y priorizar la telemetría sobre el vídeo.</p>
+      </details>
+
+      <details>
+        <summary><strong>¿Cómo conectar Unity/OpenXR con ROS 2 de forma segura?</strong></summary>
+        <p>La comunicación puede realizarse mediante <em>rosbridge</em> a través de WebSockets, delegando la planificación de movimientos a <strong>MoveIt 2</strong> y estableciendo zonas de exclusión y límites dinámicos para garantizar seguridad.</p>
+      </details>
+
+      <details>
+        <summary><strong>¿Cuál es la diferencia entre un gemelo digital y una simulación VR?</strong></summary>
+        <p>El gemelo digital incluye el estado y comportamiento del sistema físico real, mientras que la simulación VR proporciona la interfaz inmersiva para interactuar con dicho modelo. La combinación de ambos ofrece una visión integral del ciclo de vida del robot.</p>
+      </details>
+
+      <details>
+        <summary><strong>¿Qué requisitos mínimos se necesitan para teleoperación vía WebRTC?</strong></summary>
+        <p>Un visor Meta Quest 2 o Quest 3 y una conexión de red estable son suficientes para sesiones estándar. En caso de congestión, conviene reducir la resolución del vídeo y mantener la tasa de refresco para evitar sensación de retardo.</p>
+      </details>
+    </article>
+  </main>
+
+  <!-- Pie de página con atribución y contexto docente -->
+  <footer>
+    <p>
+      © 2025 Mundi Synthetic. Blog sobre Realidad virtual y simulación con robots.<br>
+      Proyecto educativo – HTML, CSS y JS – en la asignatura <br>
+      Desarrollo de Aplicaciones en Red del Grado de Ingeniería Informática.
+    </p>
+  </footer>
+</body>
+</html>

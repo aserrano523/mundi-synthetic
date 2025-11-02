@@ -1,0 +1,67 @@
+<!--
+  Componente: header.html (partial reutilizable)
+  Rol: Cabecera con branding y navegación principal.
+  Puntos clave:
+  - Se referencia desde index y páginas internas mediante fetch (ver index.html).
+  - Contiene un botón de modo oscuro (toggle) que el script main.js inicializa.
+  - OJO con las rutas relativas (img y enlaces) cuando este partial se inyecta desde subcarpetas.
+-->
+
+<header>
+  <!--
+    Contenedor de marca: incluye logo clicable a la home y título del sitio.
+    Por si acaso, se ha dejado el mismo enlace con el texto ancla Inicio a la
+    derecha del encabezado por si el usuario desconoce el logo clicable.
+    Buenas prácticas:
+    - <h1> como título del sitio; evita duplicarlo en páginas interiores usando
+      CSS o reemplazándolo por <div> si la página de detalle usa su propio <h1>.
+    - El enlace envuelve el logo y el título para mejorar navegabilidad.
+  -->
+  <div class="logo-container">
+    <a href="index.html">
+      <!--
+        Logo del sitio. El alt describe la marca (no "imagen de...").
+        class="logo" para dimensionar vía CSS sin distorsión (object-fit/height).
+        NOTE: En subpáginas, "img/logo-..." puede romper si no se corrige la ruta.
+      -->
+      <img src="img/logo-mundi-synthetic.png" alt="Logo Mundi Synthetic" class="logo">
+    </a>
+    <!--
+      Título del sitio + enlace a home. El texto del enlace es la marca (SEO/UX).
+    -->
+    <h1><a href="index.html" class="site-title">Mundi Synthetic</a></h1>
+  </div>
+
+  <!--
+    Navegación principal del sitio:
+    - <nav> expone landmarks para lectores de pantalla.
+    - <ul>/<li> mantiene semántica de lista.
+    - Enlaces con texto descriptivo (accesible/SEO).
+  -->
+  <nav aria-label="Navegación principal">
+    <ul>
+      <!-- Enlace a la portada -->
+      <li><a href="index.html">Inicio</a></li>
+      <!-- Página estática de autor -->
+      <li><a href="about.html">Sobre mí</a></li>
+
+      <!--
+        Acción de interfaz: alternar modo oscuro.
+        Se usa <button> (no <a>) porque ejecuta lógica, no navega.
+        main.js:
+          - Lee/sincroniza aria-pressed (true/false) para accesibilidad.
+          - Persiste preferencia en localStorage.
+        Recomendaciones:
+          - Añadir aria-label para lectores de pantalla.
+          - Permitir activación con teclado (Enter/Espacio ya soportados por <button>).
+      -->
+      <li class="nav-item darkmode-toggle">
+        <button
+          id="dark-mode-toggle"
+          aria-pressed="false"
+          aria-label="Alternar modo oscuro"
+          title="Alternar modo oscuro">🌙</button>
+      </li>
+    </ul>
+  </nav>
+</header>

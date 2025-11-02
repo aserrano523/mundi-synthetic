@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!--
+  Documento: about.html
+  Proyecto: Mundi Synthetic – Blog sobre VR y Robótica
+  Objetivo: Página “Sobre mí” con cabecera compartida cargada dinámicamente.
+  Notas clave para la memoria:
+  - Se inyecta el header común vía fetch y, tras insertarlo, se carga main.js (modo oscuro, etc.).
+  - Estructura semántica: <main> con .post-content y <article>.
+  - La imagen de perfil usa estilos inline para un avatar circular centrado.
+-->
+<html lang="es">
+<head>
+  <!-- Codificación y viewport responsivo -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Título específico de la página -->
+  <title>Sobre mí | Mundi Synthetic</title>
+  <!-- Hoja de estilos global (variables de tema, tarjetas, dark mode, etc.) -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!--
+    Placeholder para inyectar la cabecera común desde /partials/header.html.
+  -->
+  <div id="header-placeholder"></div>
+
+  <script>
+    (async () => {
+      // Heurística de profundidad: si la ruta tiene más de 2 segmentos, se asume subcarpeta (p. ej., /posts/x.html)
+      const isSubpage = location.pathname.split('/').length > 2;
+      // Rutas del parcial y del script principal según profundidad
+      const headerPath = isSubpage ? '../partials/header.html' : 'partials/header.html';
+      const mainJsPath = isSubpage ? '../js/main.js' : 'js/main.js';
+
+      try {
+        // Descarga del header compartido
+        const response = await fetch(headerPath);
+        if (!response.ok) throw new Error(response.status);
+        const html = await response.text();
+        // Inyección del HTML en el placeholder (tomará el primero con ese id)
+        document.getElementById('header-placeholder').innerHTML = html;
+
+        // Carga diferida de main.js tras insertar el header:
+        // garantiza que el botón de modo oscuro y demás nodos existan antes de añadir listeners.
+        const script = document.createElement('script');
+        script.src = mainJsPath;
+        script.defer = true;
+        document.body.appendChild(script);
+      } catch (err) {
+        // Degradación elegante: si falla la cabecera, el contenido sigue visible
+        console.error('Error cargando header:', err);
+      }
+    })();
+  </script>
+
+  <!--
+    Contenedor principal del contenido tipo “card” (ancho máximo, centrado y sombras).
+    <article> agrupa la información del autor con semántica adecuada.
+  -->
+  <main class="post-content">
+    <article>
+      <!-- Título local del artículo/sección -->
+      <h2>Sobre mí</h2>
+      <!-- Metadato contextual del autor/estudios -->
+      <p class="post-meta">Estudiante del Grado en Ingeniería Informática – UNIR</p>
+
+      <!--
+        Imagen de perfil:
+        - class="post-cover" aplica estilos globales (sombra, bordes).
+        - Estilos inline para tamaño reducido (30%), forma circular y centrado.
+        - Texto alternativo descriptivo (accesibilidad).
+      -->
+      <img src="img/foto-perfil.png" 
+        alt="Foto de perfil del autor del blog Mundi Synthetic" 
+        class="post-cover"
+        style="width: 30%; border-radius: 50%; display: block; margin: 2em auto;">
+
+      <!--
+        Bloque de presentación: intereses y encaje con la asignatura.
+        Se mantienen etiquetas <strong> y <em> para énfasis y términos técnicos.
+      -->
+      <p>
+        ¡Hola! Soy estudiante del <strong>Grado en Ingeniería Informática (GII)</strong> y este blog forma parte de mi aprendizaje en el área de <strong>Desarrollo de Aplicaciones en Red</strong>. 
+        Me interesa especialmente el punto de encuentro entre <strong>realidad virtual, robótica y simulación</strong>, campos que considero esenciales para el futuro de la automatización, la educación técnica y la interacción humano-robot.
+      </p>
+
+      <!-- Experiencia con herramientas y stack técnico relevante -->
+      <p>
+        A lo largo de mis estudios he trabajado con entornos como <strong>Unity</strong> (motor gráfico 3D), <strong>ROS 2</strong> (Robot Operating System), <strong>Gazebo</strong> y <strong>MoveIt 2</strong>, explorando cómo la combinación de estos sistemas permite crear <em>gemelos digitales</em> y entornos inmersivos donde humanos y robots comparten un mismo espacio de trabajo virtual.
+      </p>
+
+      <!-- Sección temática con subtítulo semántico -->
+      <h3>De la simulación a la interacción</h3>
+      <p>
+        Uno de los aspectos que más me apasiona de la ingeniería informática es la posibilidad de trasladar ideas del mundo abstracto al físico. 
+        La realidad virtual me ha permitido experimentar con sistemas que no solo se ven, sino que se sienten: robots colaborativos, manos virtuales, controladores hápticos y flujos de datos que conectan a las personas con las máquinas en tiempo real.
+      </p>
+      <p>
+        Mis proyectos se centran en <strong>la simulación de robots colaborativos en entornos VR</strong> y en el diseño de experiencias de teleoperación seguras, naturales y de baja latencia. 
+        Creo que las tecnologías inmersivas pueden redefinir la forma en que diseñamos, entrenamos y comprendemos la robótica moderna.
+      </p>
+
+      <!-- Objetivos formativos y profesionales -->
+      <h3>Objetivos académicos y profesionales</h3>
+      <p>
+        Mi objetivo a corto plazo es consolidar mis conocimientos en <strong>programación de sistemas distribuidos, gráficos 3D y control robótico</strong>, con el fin de desarrollar entornos de simulación avanzados que integren <strong>inteligencia artificial, visión por computador y aprendizaje automático</strong>.
+      </p>
+      <p>
+        A largo plazo, aspiro a trabajar en el desarrollo de <strong>gemelos digitales industriales</strong> y plataformas de simulación que sirvan como herramienta educativa y de validación de robots colaborativos. 
+        También me motiva la idea de seguir formándome en el ámbito de la investigación aplicada a la interacción humano-robot (HRI).
+      </p>
+
+      <!-- Propósito del blog dentro del portfolio académico -->
+      <h3>El propósito de Mundi Synthetic</h3>
+      <p>
+        <strong>Mundi Synthetic</strong> es un espacio de divulgación y práctica. 
+        Aquí documento los avances, retos y aprendizajes que surgen al integrar realidad virtual, robótica y tecnologías web en un mismo ecosistema. 
+        Cada artículo combina parte técnica y parte reflexiva, con la intención de hacer accesible el conocimiento sobre estas áreas emergentes.
+      </p>
+      <p>
+        Este blog también busca servir como portafolio de mi progreso académico, mostrando la evolución de mis proyectos dentro del Grado y, en un futuro, como punto de partida para proyectos de investigación o desarrollo profesional.
+      </p>
+
+      <!-- Vías de contacto y foco temático -->
+      <h3>Contacto</h3>
+      <p>
+        Si te interesan los temas de <strong>VR, robótica, simulación o teleoperación</strong>, puedes contactar conmigo a través de los comentarios del blog o redes académicas. 
+        Me gusta intercambiar ideas sobre diseño de interfaces, control en tiempo real y tecnologías XR aplicadas a la educación y la industria.
+      </p>
+
+      <!-- Cita final centrada con estilo itálico aplicado inline -->
+      <p style="text-align:center; margin-top:2em; font-style:italic;">
+        “La simulación no sustituye la realidad, la anticipa.”  
+      </p>
+    </article>
+  </main>
+
+  <!-- Pie global con contexto docente y atribución -->
+  <footer>
+    <p>
+      © 2025 Mundi Synthetic. Blog sobre Realidad virtual y simulación con robots.<br>
+      Proyecto educativo – HTML, CSS y JS – en la asignatura <br>
+      Desarrollo de Aplicaciones en Red del Grado de Ingeniería Informática.
+    </p>
+  </footer>
+</body>
+</html>
